@@ -70,6 +70,11 @@ ReadStreamDebugInfoSamplingConfig::ReadStreamDebugInfoSamplingConfig(
   auto& path = src.second;
   source_->setAsyncCallback(all_read_streams_debug_cb_.get());
 
+  // For some ConfigSources, we require the path not empty        -- by @mu
+  if (source_->getName() == "file" && path.empty()) {
+    return;
+  }
+
   std::string config_str;
   ConfigSource::Output out;
   auto status = source_->getConfig(path, &out);
