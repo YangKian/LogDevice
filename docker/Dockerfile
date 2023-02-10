@@ -23,6 +23,10 @@ RUN cmake -Dthriftpy3=OFF \
     && make -j ${PARALLEL:-$(nproc)} \
     && make install -j${PARALLEL:-$(nproc)}
 
+# For COPY on multiarch builds
+RUN ln -s /build/staging/usr/lib/$(uname -m)-linux-gnu \
+      /build/staging/usr/lib/_linux-gnu
+
 CMD /bin/bash
 
 # -----------------------------------------------------------------------------
@@ -67,7 +71,7 @@ COPY --from=deps /usr/local/bin/thrift1 /usr/local/bin/thrift1
 
 # libraries
 COPY --from=deps /usr/lib/libjemalloc.so.2 /usr/lib/
-COPY --from=deps /build/staging/usr/lib/x86_64-linux-gnu/ \
+COPY --from=deps /build/staging/usr/lib/_linux-gnu/ \
                  /build/lib/libldquery.so \
                  /usr/local/lib/ \
                  /usr/local/lib/
@@ -96,7 +100,7 @@ COPY --from=deps /build/bin/ld* \
 COPY --from=deps /usr/lib/libjemalloc.so.2 /usr/lib/
 RUN ln -sr /usr/lib/libjemalloc.so.2 /usr/lib/libjemalloc.so
 
-COPY --from=deps /build/staging/usr/lib/x86_64-linux-gnu/ \
+COPY --from=deps /build/staging/usr/lib/_linux-gnu/ \
                  /usr/local/lib/ \
                  /usr/local/lib/
 
