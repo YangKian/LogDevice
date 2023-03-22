@@ -28,6 +28,12 @@ class CheckpointedReaderFactory {
                            std::unique_ptr<CheckpointStore> store,
                            CheckpointedReaderBase::CheckpointingOptions opts);
 
+  std::unique_ptr<SharedSyncCheckpointedReader> createCheckpointedReader(
+      const std::string& reader_name,
+      std::unique_ptr<Reader> reader,
+      std::shared_ptr<CheckpointStore> store,
+      SharedCheckpointedReaderBase::CheckpointingOptions opts);
+
   /**
    * Creates an async CheckpointedReader.
    *

@@ -15,13 +15,15 @@
 
 namespace facebook { namespace logdevice {
 
-CheckpointedReaderBase::CheckpointedReaderBase(
+template <typename T>
+CheckpointedReaderBase_<T>::CheckpointedReaderBase_(
     const std::string& reader_name,
-    std::unique_ptr<CheckpointStore> store,
+    T store,
     CheckpointingOptions opts)
     : options_(opts), reader_name_(reader_name), store_(std::move(store)) {}
 
-Status CheckpointedReaderBase::syncWriteCheckpoints(
+template <typename T>
+Status CheckpointedReaderBase_<T>::syncWriteCheckpoints(
     const std::map<logid_t, lsn_t>& checkpoints) {
   Status return_status = Status::UNKNOWN;
   for (int retries = 0; retries < options_.num_retries; retries++) {
@@ -40,33 +42,39 @@ Status CheckpointedReaderBase::syncWriteCheckpoints(
   return return_status;
 }
 
-void CheckpointedReaderBase::asyncWriteCheckpoints(
+template <typename T>
+void CheckpointedReaderBase_<T>::asyncWriteCheckpoints(
     const std::map<logid_t, lsn_t>& checkpoints,
     StatusCallback cb) {
   store_->updateLSN(reader_name_, checkpoints, std::move(cb));
 }
 
-Status CheckpointedReaderBase::syncRemoveCheckpoints(
+template <typename T>
+Status CheckpointedReaderBase_<T>::syncRemoveCheckpoints(
     const std::vector<logid_t>& checkpoints) {
   return store_->removeCheckpointsSync(reader_name_, checkpoints);
 }
 
-void CheckpointedReaderBase::asyncRemoveCheckpoints(
+template <typename T>
+void CheckpointedReaderBase_<T>::asyncRemoveCheckpoints(
     const std::vector<logid_t>& checkpoints,
     StatusCallback cb) {
   store_->removeCheckpoints(reader_name_, checkpoints, std::move(cb));
 }
 
-Status CheckpointedReaderBase::syncRemoveAllCheckpoints() {
+template <typename T>
+Status CheckpointedReaderBase_<T>::syncRemoveAllCheckpoints() {
   return store_->removeAllCheckpointsSync(reader_name_);
 }
 
-void CheckpointedReaderBase::asyncRemoveAllCheckpoints(StatusCallback cb) {
+template <typename T>
+void CheckpointedReaderBase_<T>::asyncRemoveAllCheckpoints(StatusCallback cb) {
   store_->removeAllCheckpoints(reader_name_, std::move(cb));
 }
 
-Status
-CheckpointedReaderBase::syncWriteCheckpoints(const std::vector<logid_t>& logs) {
+template <typename T>
+Status CheckpointedReaderBase_<T>::syncWriteCheckpoints(
+    const std::vector<logid_t>& logs) {
   auto checkpoints = getNewCheckpoints(logs);
   if (checkpoints.hasError()) {
     return checkpoints.error();
@@ -74,7 +82,8 @@ CheckpointedReaderBase::syncWriteCheckpoints(const std::vector<logid_t>& logs) {
   return syncWriteCheckpoints(std::move(checkpoints).value());
 }
 
-void CheckpointedReaderBase::asyncWriteCheckpoints(
+template <typename T>
+void CheckpointedReaderBase_<T>::asyncWriteCheckpoints(
     StatusCallback cb,
     const std::vector<logid_t>& logs) {
   auto checkpoints = getNewCheckpoints(logs);
@@ -85,8 +94,10 @@ void CheckpointedReaderBase::asyncWriteCheckpoints(
   asyncWriteCheckpoints(std::move(checkpoints).value(), std::move(cb));
 }
 
+template <typename T>
 folly::Expected<std::map<logid_t, lsn_t>, E>
-CheckpointedReaderBase::getNewCheckpoints(const std::vector<logid_t>& logs) {
+CheckpointedReaderBase_<T>::getNewCheckpoints(
+    const std::vector<logid_t>& logs) {
   std::map<logid_t, lsn_t> checkpoints;
   if (logs.empty()) {
     for (auto [log_id, lsn] : last_read_lsn_) {
@@ -104,8 +115,13 @@ CheckpointedReaderBase::getNewCheckpoints(const std::vector<logid_t>& logs) {
   return checkpoints;
 }
 
-void CheckpointedReaderBase::setLastLSNInMap(logid_t log_id, lsn_t lsn) {
+template <typename T>
+void CheckpointedReaderBase_<T>::setLastLSNInMap(logid_t log_id, lsn_t lsn) {
   last_read_lsn_.insert_or_assign(
       log_id, std::max(last_read_lsn_[log_id], lsn));
 }
+
+template class CheckpointedReaderBase_<std::unique_ptr<CheckpointStore>>;
+template class CheckpointedReaderBase_<std::shared_ptr<CheckpointStore>>;
+
 }} // namespace facebook::logdevice

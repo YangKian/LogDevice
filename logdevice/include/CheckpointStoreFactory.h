@@ -25,6 +25,9 @@ class CheckpointStoreFactory {
   std::unique_ptr<CheckpointStore>
   createFileBasedCheckpointStore(std::string root_path);
 
+  std::shared_ptr<CheckpointStore>
+  createSharedFileBasedCheckpointStore(std::string root_path);
+
   /**
    * Creates a zookeeper based CheckpointStore.
    *
@@ -33,6 +36,9 @@ class CheckpointStoreFactory {
    */
   std::unique_ptr<CheckpointStore>
   createZookeeperBasedCheckpointStore(std::shared_ptr<Client>& client);
+
+  std::shared_ptr<CheckpointStore>
+  createSharedZookeeperBasedCheckpointStore(std::shared_ptr<Client>& client);
 
   /**
    * Creates a Replicated State Machine based CheckpointStore. The checkpoints
@@ -49,6 +55,11 @@ class CheckpointStoreFactory {
   createRSMBasedCheckpointStore(std::shared_ptr<Client>& client,
                                 logid_t log_id,
                                 std::chrono::milliseconds stop_timeout);
+
+  std::shared_ptr<CheckpointStore>
+  createSharedRSMBasedCheckpointStore(std::shared_ptr<Client>& client,
+                                      logid_t log_id,
+                                      std::chrono::milliseconds stop_timeout);
 };
 
 }} // namespace facebook::logdevice
