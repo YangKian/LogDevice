@@ -21,7 +21,8 @@ struct ReadStreamAttributes;
  * @file CheckpointedReaderBase provides API for checkpointing logs which
  *   will be shared between SyncCheckpointedReader and AsyncCheckpointedReader.
  */
-class CheckpointedReaderBase {
+template <typename T>
+class CheckpointedReaderBase_ {
  public:
   using StatusCallback = folly::Function<void(Status)>;
 
@@ -36,11 +37,11 @@ class CheckpointedReaderBase {
   /*
    * See the params of CheckpointedReaderFactory creating functions.
    */
-  CheckpointedReaderBase(const std::string& reader_name,
-                         std::unique_ptr<CheckpointStore> store,
-                         CheckpointingOptions opts);
+  CheckpointedReaderBase_(const std::string& reader_name,
+                          T store,
+                          CheckpointingOptions opts);
 
-  virtual ~CheckpointedReaderBase() = default;
+  virtual ~CheckpointedReaderBase_() = default;
 
   /*
    * Writes the passed checkpoints synchronously with retries specified in opts.
@@ -87,7 +88,7 @@ class CheckpointedReaderBase {
 
   CheckpointingOptions options_;
   std::string reader_name_;
-  std::unique_ptr<CheckpointStore> store_;
+  T store_;
   /*
    * This map should be updated after reading each record and after each call of
    * startReading function.
@@ -98,5 +99,11 @@ class CheckpointedReaderBase {
   folly::Expected<std::map<logid_t, lsn_t>, E>
   getNewCheckpoints(const std::vector<logid_t>& logs);
 };
+
+using CheckpointedReaderBase =
+    CheckpointedReaderBase_<std::unique_ptr<CheckpointStore>>;
+
+using SharedCheckpointedReaderBase =
+    CheckpointedReaderBase_<std::shared_ptr<CheckpointStore>>;
 
 }} // namespace facebook::logdevice

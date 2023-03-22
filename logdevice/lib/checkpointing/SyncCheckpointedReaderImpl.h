@@ -15,12 +15,14 @@ namespace facebook { namespace logdevice {
  * @file SyncCheckpointedReaderImpl implements SyncCheckpointedReader interface
  *   by proxying all Reader functions.
  */
-class SyncCheckpointedReaderImpl : public SyncCheckpointedReader {
+template <typename T>
+class SyncCheckpointedReaderImpl_ : public SyncCheckpointedReader_<T> {
  public:
-  SyncCheckpointedReaderImpl(const std::string& reader_name,
-                             std::unique_ptr<Reader> reader,
-                             std::unique_ptr<CheckpointStore> store,
-                             CheckpointingOptions opts);
+  SyncCheckpointedReaderImpl_(
+      const std::string& reader_name,
+      std::unique_ptr<Reader> reader,
+      T store,
+      typename CheckpointedReaderBase_<T>::CheckpointingOptions opts);
 
   int startReadingFromCheckpoint(
       logid_t log_id,
@@ -71,5 +73,11 @@ class SyncCheckpointedReaderImpl : public SyncCheckpointedReader {
  private:
   std::unique_ptr<Reader> reader_;
 };
+
+using SyncCheckpointedReaderImpl =
+    SyncCheckpointedReaderImpl_<std::unique_ptr<CheckpointStore>>;
+
+using SharedSyncCheckpointedReaderImpl =
+    SyncCheckpointedReaderImpl_<std::shared_ptr<CheckpointStore>>;
 
 }} // namespace facebook::logdevice

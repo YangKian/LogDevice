@@ -22,6 +22,16 @@ CheckpointedReaderFactory::createCheckpointedReader(
       reader_name, std::move(reader), std::move(store), opts);
 }
 
+std::unique_ptr<SharedSyncCheckpointedReader>
+CheckpointedReaderFactory::createCheckpointedReader(
+    const std::string& reader_name,
+    std::unique_ptr<Reader> reader,
+    std::shared_ptr<CheckpointStore> store,
+    SharedCheckpointedReaderBase::CheckpointingOptions opts) {
+  return std::make_unique<SharedSyncCheckpointedReaderImpl>(
+      reader_name, std::move(reader), std::move(store), opts);
+}
+
 std::unique_ptr<AsyncCheckpointedReader>
 CheckpointedReaderFactory::createCheckpointedReader(
     const std::string& reader_name,
