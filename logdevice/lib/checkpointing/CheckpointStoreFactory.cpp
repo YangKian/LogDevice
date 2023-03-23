@@ -58,30 +58,23 @@ CheckpointStoreFactory::createRqliteBasedCheckpointStore(
 }
 
 std::shared_ptr<CheckpointStore>
-CheckpointStoreFactory::createSharedZookeeperBasedCheckpointStore(
+CheckpointStoreFactory::createSharedRqliteBasedCheckpointStore(
     std::shared_ptr<Client>& client) {
   ClientImpl* client_impl = dynamic_cast<ClientImpl*>(client.get());
   ld_check(client_impl);
 
-  std::shared_ptr<ZookeeperClientFactory> zookeeper_client_factory =
-      client_impl->getProcessor()
-          .getPluginRegistry()
-          ->getSinglePlugin<ZookeeperClientFactory>(
-              PluginType::ZOOKEEPER_CLIENT_FACTORY);
-  auto zookeeper_config = client_impl->getConfig()->getZookeeperConfig();
-  auto zookeeper_client =
-      zookeeper_client_factory->getClient(*zookeeper_config);
-  if (!zookeeper_client) {
-    ld_error("Failed to create a zookeeper client in CheckpointStoreFactory");
+  auto rqlite_config = client_impl->getConfig()->getRqliteConfig();
+  auto rqlite_client =
+      std::make_unique<RqliteClient>(rqlite_config->getRqliteUri());
+  if (!rqlite_client) {
+    ld_error("Failed to create a Rqlite client in CheckpointStoreFactory");
     return nullptr;
   }
-  auto versioned_config_store = std::make_unique<ZookeeperVersionedConfigStore>(
-      CheckpointStoreImpl::extractVersion,
-      std::move(zookeeper_client),
-      client_impl->getProcessor().settings()->zk_vcs_max_retries);
+  auto versioned_config_store = std::make_unique<RqliteVersionedConfigStore>(
+      CheckpointStoreImpl::extractVersion, std::move(rqlite_client));
 
   std::string prefix = folly::sformat(
-      "/logdevice/{}/checkpoints/",
+      "logdevice-{}-checkpoints",
       client_impl->getConfig()->getServerConfig()->getClusterName());
   return std::make_shared<CheckpointStoreImpl>(
       std::move(versioned_config_store), std::move(prefix));

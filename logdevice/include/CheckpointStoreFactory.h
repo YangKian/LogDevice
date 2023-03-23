@@ -38,7 +38,7 @@ class CheckpointStoreFactory {
   createRqliteBasedCheckpointStore(std::shared_ptr<Client>& client);
 
   std::shared_ptr<CheckpointStore>
-  createSharedZookeeperBasedCheckpointStore(std::shared_ptr<Client>& client);
+  createSharedRqliteBasedCheckpointStore(std::shared_ptr<Client>& client);
 
   /**
    * Creates a Replicated State Machine based CheckpointStore. The checkpoints
