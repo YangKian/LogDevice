@@ -28,4 +28,4 @@
 	url = https://github.com/fmtlib/fmt.git
 [submodule "external/jemalloc"]
 	path = external/jemalloc
-	url = git@github.com:jemalloc/jemalloc.git
+	url = https://github.com/jemalloc/jemalloc.git
