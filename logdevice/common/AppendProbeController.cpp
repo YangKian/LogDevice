@@ -57,7 +57,14 @@ void AppendProbeController::onSuccess(NodeID node_id, logid_t) {
       break;
     case State::Enum::LAST_APPEND_FAILED:
       // We had a failure but now we succeeded, transition to RECOVERING
+#if defined(__aarch64__) || defined(_M_ARM64)
+      // XXX: weak exchange will fail at
+      // "logdevice/common/stats/HistogramBundle.h" on arm64. It's possible that
+      // a strong exchange should be used here as well.
+      if (state->e.compare_exchange_strong(prev, State::Enum::RECOVERING)) {
+#else
       if (state->e.compare_exchange_weak(prev, State::Enum::RECOVERING)) {
+#endif
         ld_debug("Transitioned %s to RECOVERING", node_id.toString().c_str());
         state->healthy_at.store(now() + recovery_interval_);
       }

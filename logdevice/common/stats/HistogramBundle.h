@@ -129,7 +129,12 @@ class ShardedHistogram : public ShardedHistogramBase {
     if (state == InitState::NOT_INITIALIZED) {
       // No one initialized the entry for this shard yet.
       // Let's try to do it ourselves.
+#if defined(__aarch64__) || defined(_M_ARM64)
+      // XXX: I don't know why arm64 must use strong exchange
+      if (entry.initState_.compare_exchange_strong(
+#else
       if (entry.initState_.compare_exchange_weak(
+#endif
               state, InitState::INITIALIZING)) {
         // Acquired the lock. Take care of the initialization.
         entry.hist = std::make_unique<HistogramType>();
@@ -231,7 +236,12 @@ HistogramBundleBase<T>::map() const {
 
   if (state == MapInitState::NOT_INITIALIZED) {
     // No one initialized map_ yet. Let's try to do it ourselves.
+#if defined(__aarch64__) || defined(_M_ARM64)
+    // XXX: I don't know why arm64 must use strong exchange
+    if (mapInitState_.compare_exchange_strong(
+#else
     if (mapInitState_.compare_exchange_weak(
+#endif
             state, MapInitState::INITIALIZING)) {
       // Acquired the lock. Initialize map_.
       map_ = const_cast<HistogramBundleBase<T>*>(this)->getMap();
