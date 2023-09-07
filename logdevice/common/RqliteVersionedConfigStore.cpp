@@ -361,8 +361,6 @@ bool RqliteVersionedConfigStore::matchError(
 
 std::tuple<std::string, std::string>
 RqliteVersionedConfigStore::splitKey(const std::string& key) const {
-  ld_info("key: %s", key.c_str());
-
   std::stringstream ss(key);
   std::string item;
   std::vector<std::string> elems;
