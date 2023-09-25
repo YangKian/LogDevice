@@ -1,0 +1,4 @@
+clang
+%h %hpp
+-Ilogdevice/include
+-I.
