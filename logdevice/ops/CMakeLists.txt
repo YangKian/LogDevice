@@ -37,6 +37,7 @@ foreach(_ops ${_ops_dirs})
   )
 endforeach()
 
+if(${BUILD_LDSHELL})
 add_custom_command(TARGET create_ldshell POST_BUILD
   COMMAND
     ${PYTHON_EXECUTABLE} setup.py bdist_wheel
@@ -50,3 +51,4 @@ install(CODE
   WORKING_DIRECTORY \"${LOGDEVICE_PY_OUT}/\"
   )"
 )
+endif()

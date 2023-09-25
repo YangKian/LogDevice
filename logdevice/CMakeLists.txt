@@ -49,6 +49,9 @@ include(logdevice-functions)
 include(build-config)
 
 option(BUILD_TESTS "If enabled, compile the tests." ON)
+# NOTE: ldshell is broken
+option(BUILD_LDSHELL "If enabled, compile the tests." OFF)
+
 option(BUILD_SUBMODULES "Build using Git submodules, to fulfill dependencies"
        ON)
 if(${BUILD_SUBMODULES})
