@@ -96,6 +96,65 @@ void CheckpointStoreImpl::getLSN(const std::string& customer_id,
   vcs_->getLatestConfig(createKey(customer_id), std::move(cb));
 }
 
+void CheckpointStoreImpl::getAllCheckpoints(const std::string& customer_id,
+                                            GetAllCallback gcb) const {
+  auto cb = [this, ref = holder_.ref(), customer_id, gcb = std::move(gcb)](
+                Status status, std::string value) mutable {
+    if (status == Status::AGAIN) {
+      // Currently, if the VCS is not ready, we schedule a timer to retry
+      // getAllCheckpoints function in kRetryDuration.
+      if (!ref) {
+        return;
+      }
+      auto get_lsns_no_args = [this,
+                               ref = holder_.ref(),
+                               customer_id,
+                               gcb = std::move(gcb)]() mutable {
+        if (!ref) {
+          return;
+        }
+        getAllCheckpoints(customer_id, std::move(gcb));
+      };
+      event_base_->runInEventBaseThread(
+          [this, get_lsns_no_args = std::move(get_lsns_no_args)]() mutable {
+            timer_->scheduleTimeoutFn(
+                std::move(get_lsns_no_args), kRetryDuration);
+          });
+      return;
+    }
+    auto empty_value = std::map<uint64_t, lsn_t>();
+    if (status != Status::OK) {
+      gcb(status, empty_value);
+      return;
+    }
+    auto value_thrift = ThriftCodec::deserialize<BinarySerializer, Checkpoint>(
+        Slice::fromString(value));
+    if (value_thrift == nullptr) {
+      gcb(Status::BADMSG, empty_value);
+      return;
+    }
+    gcb(Status::OK, *value_thrift->log_lsn_map_ref());
+  };
+  vcs_->getLatestConfig(createKey(customer_id), std::move(cb));
+}
+
+Status CheckpointStoreImpl::getAllCheckpointsSync(
+    const std::string& customer_id,
+    std::map<uint64_t, lsn_t>* checkpoints_out) const {
+  folly::Baton<> get_baton;
+  Status return_status = Status::OK;
+  GetAllCallback cb = [&get_baton, &return_status, &checkpoints_out](
+                          Status status,
+                          std::map<uint64_t, lsn_t> log_lsn_map) mutable {
+    return_status = status;
+    set_if_not_null(checkpoints_out, log_lsn_map);
+    get_baton.post();
+  };
+  getAllCheckpoints(customer_id, std::move(cb));
+  get_baton.wait();
+  return return_status;
+};
+
 Status CheckpointStoreImpl::getLSNSync(const std::string& customer_id,
                                        logid_t log_id,
                                        lsn_t* value_out) const {

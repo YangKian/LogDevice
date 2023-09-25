@@ -25,6 +25,11 @@ class CheckpointStore {
  public:
   using Version = vcs_config_version_t;
   using GetCallback = folly::Function<void(Status, lsn_t)>;
+  // Using uint64_t instead of logid_t because
+  // 1. The thrift value deserialized is uint64_t
+  // 2. In haskell the value actually needed is uint64_t
+  using GetAllCallback =
+      folly::Function<void(Status, std::map<uint64_t /* logid */, lsn_t>&)>;
   using StatusCallback = folly::Function<void(Status)>;
 
   /**
@@ -46,6 +51,13 @@ class CheckpointStore {
   virtual void getLSN(const std::string& customer_id,
                       logid_t log_id,
                       GetCallback cb) const = 0;
+
+  virtual void getAllCheckpoints(const std::string& customer_id,
+                                 GetAllCallback cb) const = 0;
+
+  virtual Status getAllCheckpointsSync(
+      const std::string& customer_id,
+      std::map<uint64_t /* logid */, lsn_t>* checkpoints_out) const = 0;
 
   /*
    * Synchronous getLSN

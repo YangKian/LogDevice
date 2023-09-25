@@ -37,6 +37,13 @@ class CheckpointStoreImpl : public CheckpointStore {
                     logid_t log_id,
                     lsn_t* value_out) const override;
 
+  void getAllCheckpoints(const std::string& customer_id,
+                         GetAllCallback cb) const override;
+
+  Status getAllCheckpointsSync(
+      const std::string& customer_id,
+      std::map<uint64_t /* logid */, lsn_t>* checkpoints_out) const override;
+
   Status updateLSNSync(const std::string& customer_id,
                        logid_t log_id,
                        lsn_t lsn) override;
