@@ -1,18 +1,18 @@
-FROM ubuntu:focal
+FROM ubuntu:jammy
 
 COPY docker/build_deps/ubuntu.deps /deps/ubuntu.deps
 RUN apt-get update && \
     DEBIAN_FRONTEND="noninteractive" apt-get install --no-install-recommends \
       -y $(cat /deps/ubuntu.deps) ninja-build && \
-    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 20 && \
-    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 20 && \
-    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-10 20 && \
-    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-10 20 && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 20 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 20 && \
+    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-11 20 && \
+    update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-11 20 && \
     rm -rf /var/lib/apt/lists/*
 
 ARG PARALLEL
-ENV CC=clang-10
-ENV CXX=clang++-10
+ENV CC=clang-11
+ENV CXX=clang++-11
 
 # jemalloc
 COPY external/jemalloc /deps/jemalloc
@@ -83,8 +83,8 @@ RUN python3 /deps/fbthrift/build/fbcode_builder/getdeps.py build \
     rm -rf /tmp/*
 # doesn't build on clang with c++17
 # e.g. https://github.com/pybind/pybind11/issues/1818
-RUN export CC=gcc-10 && \
-    export CXX=g++-10 && \
+RUN export CC=gcc-11 && \
+    export CXX=g++-11 && \
     cd /deps/fbthrift && \
     cmake -DCMAKE_BUILD_TYPE=Release \
           -Dthriftpy3=OFF \
