@@ -1,8 +1,8 @@
 cmake
 wget
 git
-g++-10
-clang-10
+g++-11
+clang-11
 make
 libboost-dev
 libboost-python-dev

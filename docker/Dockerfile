@@ -33,7 +33,7 @@ CMD /bin/bash
 # The client image (for haskell)
 # -----------------------------------------------------------------------------
 
-FROM ubuntu:focal AS client
+FROM ubuntu:jammy AS client
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       gcc g++ && \
@@ -76,9 +76,7 @@ COPY --from=deps /build/staging/usr/lib/_linux-gnu/ \
                  /usr/local/lib/ \
                  /usr/local/lib/
 RUN sed -i 's/-Werror=unknown-warning-option//g' /usr/local/lib/pkgconfig/libfolly.pc && \
-    ln -sr /usr/lib/libjemalloc.so.2 /usr/lib/libjemalloc.so
-
-RUN rm -rf /usr/local/lib/python3.8 /usr/local/lib/cmake && \
+    ln -sr /usr/lib/libjemalloc.so.2 /usr/lib/libjemalloc.so && \
     strip --strip-unneeded /usr/local/lib/*.so*
 
 CMD /bin/bash
@@ -87,7 +85,7 @@ CMD /bin/bash
 # The production image
 # -----------------------------------------------------------------------------
 
-FROM ubuntu:focal
+FROM ubuntu:jammy
 
 # ldshell _requires_ utf-8
 ENV LANG C.UTF-8
@@ -104,13 +102,11 @@ COPY --from=deps /build/staging/usr/lib/_linux-gnu/ \
                  /usr/local/lib/ \
                  /usr/local/lib/
 
-RUN rm -rf /usr/local/lib/python3.8 /usr/local/lib/cmake /usr/local/lib/*.a
-
 # Install runtime dependencies for ld-dev-cluster, ldshell friends.
 # To install the ldshell wheel we also need python3 build tools, as
 # we depend on python-Levenshtein for which a many-linux binary wheel is not
 # available; these are removed following install to keep docker image size low.
-COPY docker/build_deps/ubuntu_focal_runtime.deps /tmp/logdevice_runtime.deps
+COPY docker/build_deps/ubuntu_jammy_runtime.deps /tmp/logdevice_runtime.deps
 
 RUN apt-get update && \
     DEBIAN_FRONTEND="noninteractive" apt-get install -y --no-install-recommends \
