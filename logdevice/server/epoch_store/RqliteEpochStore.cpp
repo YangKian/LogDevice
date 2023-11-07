@@ -1,4 +1,3 @@
-
 #include "logdevice/server/epoch_store/RqliteEpochStore.h"
 
 #include <algorithm>
@@ -46,7 +45,6 @@ RqliteEpochStore::RqliteEpochStore(
   if (!rqclient_) {
     throw ConstructorFailed();
   }
-  ld_info("RqliteEpochStore created");
 }
 
 RqliteEpochStore::~RqliteEpochStore() {
@@ -254,10 +252,6 @@ void RqliteEpochStore::onReadTableComplete(RequestContext&& context,
   }
 
   if (value_existed) {
-    ld_info("read table value: %s, size: %d, hex value: %s",
-            result.value.c_str(),
-            result.value.size(),
-            str2hex(result.value).c_str());
     st = zrq->legacyDeserializeIntoLogMetaData(
         std::move(result.value), log_metadata);
     if (st != Status::OK) {
@@ -322,19 +316,9 @@ void RqliteEpochStore::onReadTableComplete(RequestContext&& context,
 
     std::string znode_value_str(znode_value, znode_value_size);
     if (do_provision) {
-      ld_info(
-          "ready to do_provison with znode_value: %s, size: %d, hex value: %s",
-          znode_value_str.c_str(),
-          znode_value_str.size(),
-          str2hex(znode_value_str).c_str());
       provisionLogRows(std::move(context), std::move(znode_value_str));
       return;
     } else {
-      ld_info(
-          "ready to writeTable with znode_value: %s, size: %d, hex value: %s",
-          znode_value_str.c_str(),
-          znode_value_str.size(),
-          str2hex(znode_value_str).c_str());
       writeTable(
           std::move(context), std::move(znode_value_str), result.version);
       return;
@@ -345,7 +329,6 @@ err:
   ld_check(st != E::OK);
 
 done:
-  ld_info("done");
   postRequestCompletion(st, std::move(context));
 }
 
@@ -363,7 +346,6 @@ void RqliteEpochStore::postRequestCompletion(Status st,
 }
 
 int RqliteEpochStore::getLastCleanEpoch(logid_t logid, CompletionLCE cf) {
-  ld_info("getLastCleanEpoch");
   return runRequest(std::shared_ptr<ZookeeperEpochStoreRequest>(
       new GetLastCleanEpochZRQ(logid, cf)));
 }
@@ -385,7 +367,6 @@ int RqliteEpochStore::setLastCleanEpoch(logid_t logid,
     return -1;
   }
 
-  ld_info("setLastCleanEpoch");
   return runRequest(std::shared_ptr<ZookeeperEpochStoreRequest>(
       new SetLastCleanEpochZRQ(logid, lce, tail_record, cf)));
 }
@@ -402,7 +383,6 @@ int RqliteEpochStore::createOrUpdateMetaData(
     return -1;
   }
 
-  ld_info("createOrUpdateMetaData");
   return runRequest(std::shared_ptr<ZookeeperEpochStoreRequest>(
       new EpochMetaDataZRQ(logid,
                            cf,
@@ -436,17 +416,12 @@ std::string RqliteEpochStore::hex2str(const std::string& hex) {
 
 std::tuple<std::string, std::string>
 RqliteEpochStore::splitZnodePath(const std::string& path) {
-  ld_info("splitZnodePath path: %s", path.c_str());
-  std::cout << "splitZnodePath path: " << path << std::endl;
   std::stringstream ss(path);
   std::string item;
   std::vector<std::string> elems;
   while (std::getline(ss, item, '/')) {
-    ld_info("item: %s", item.c_str());
-    std::cout << "splitZnodePath item: " << item << std::endl;
     elems.push_back(std::move(item));
   }
-  ld_info("splitZnodePath elems.size: %d", elems.size());
   ld_check(elems.size() == 3);
   return std::make_tuple(elems[1], elems[2]);
 }
