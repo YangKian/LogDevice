@@ -3,7 +3,8 @@ FROM ubuntu:jammy
 COPY docker/build_deps/ubuntu.deps /deps/ubuntu.deps
 RUN apt-get update && \
     DEBIAN_FRONTEND="noninteractive" apt-get install --no-install-recommends \
-      -y $(cat /deps/ubuntu.deps) ninja-build && \
+      -y $(cat /deps/ubuntu.deps) \
+      ninja-build libjemalloc-dev && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 20 && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 20 && \
     update-alternatives --install /usr/bin/clang clang /usr/bin/clang-11 20 && \
@@ -13,12 +14,6 @@ RUN apt-get update && \
 ARG PARALLEL
 ENV CC=clang-11
 ENV CXX=clang++-11
-
-# jemalloc
-COPY external/jemalloc /deps/jemalloc
-RUN cd /deps/jemalloc && ./autogen.sh --disable-initial-exec-tls --prefix=/usr && \
-    make -j ${PARALLEL:-$(nproc)} && \
-    make install && rm -rf /deps/jemalloc
 
 # libfmt
 COPY logdevice/external/fmt /deps/fmt

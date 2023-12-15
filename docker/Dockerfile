@@ -70,13 +70,11 @@ COPY --from=deps /build/logdevice/admin/if/gen-cpp2/*.h /usr/local/include/logde
 COPY --from=deps /usr/local/bin/thrift1 /usr/local/bin/thrift1
 
 # libraries
-COPY --from=deps /usr/lib/libjemalloc.so.2 /usr/lib/
 COPY --from=deps /build/staging/usr/lib/_linux-gnu/ \
                  /build/lib/libldquery.so \
                  /usr/local/lib/ \
                  /usr/local/lib/
 RUN sed -i 's/-Werror=unknown-warning-option//g' /usr/local/lib/pkgconfig/libfolly.pc && \
-    ln -sr /usr/lib/libjemalloc.so.2 /usr/lib/libjemalloc.so && \
     strip --strip-unneeded /usr/local/lib/*.so*
 
 CMD /bin/bash
@@ -95,9 +93,6 @@ COPY --from=deps /build/bin/ld* \
                  /build/bin/logdeviced \
                  /usr/local/bin/
 
-COPY --from=deps /usr/lib/libjemalloc.so.2 /usr/lib/
-RUN ln -sr /usr/lib/libjemalloc.so.2 /usr/lib/libjemalloc.so
-
 COPY --from=deps /build/staging/usr/lib/_linux-gnu/ \
                  /usr/local/lib/ \
                  /usr/local/lib/
@@ -110,7 +105,7 @@ COPY docker/build_deps/ubuntu_jammy_runtime.deps /tmp/logdevice_runtime.deps
 
 RUN apt-get update && \
     DEBIAN_FRONTEND="noninteractive" apt-get install -y --no-install-recommends \
-      $(cat /tmp/logdevice_runtime.deps) gcc && \
+      $(cat /tmp/logdevice_runtime.deps) gcc libjemalloc2 && \
     strip --strip-unneeded /usr/local/lib/*.so* && \
     apt-get remove -y gcc && apt-get -y autoremove && \
     rm -rf /var/lib/apt/lists/* /tmp/*.deps
