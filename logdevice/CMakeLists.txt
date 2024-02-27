@@ -200,7 +200,7 @@ target_link_libraries(logdevice_server logdevice_server_core logdevice_admin
 
 set_target_properties(logdevice_server PROPERTIES POSITION_INDEPENDENT_CODE
                                                   True)
-add_subdirectory(plugins/prometheus-plugin)
+
 add_executable(logdeviced ${LOGDEVICE_SERVER_DIR}/main.cpp)
 target_link_libraries(logdeviced logdevice_server ${LOGDEVICE_EXTERNAL_DEPS})
 

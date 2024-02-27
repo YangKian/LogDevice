@@ -13,6 +13,7 @@
 #include "logdevice/common/plugin/BuiltinThriftClientFactoryPlugin.h"
 #include "logdevice/common/plugin/BuiltinZookeeperClientFactory.h"
 #include "logdevice/common/plugin/Plugin.h"
+#include "logdevice/common/plugin/PrometheusPublisherFactory.h"
 
 namespace facebook { namespace logdevice {
 
@@ -20,6 +21,7 @@ namespace facebook { namespace logdevice {
  * A helper to create a vector of built-in plugins commonly loaded by servers,
  * clients and tests, augmented by specified types of plugins.
  */
+ // FIXME: May be create a Provider for PrometheusStatsPublisherFactory?
 template <class... Types>
 PluginVector createAugmentedCommonBuiltinPluginVector() {
   return createPluginVector<BuildInfo,
@@ -27,6 +29,7 @@ PluginVector createAugmentedCommonBuiltinPluginVector() {
                             BuiltinConfigSourceFactory,
                             BuiltinPermissionCheckerFactory,
                             BuiltinThriftClientFactoryPlugin,
+                            PrometheusStatsPublisherFactory,
                             Types...>();
 }
 

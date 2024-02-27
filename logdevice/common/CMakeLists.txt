@@ -4,6 +4,12 @@
 # This source code is licensed under the BSD-style license found in the LICENSE
 # file in the root directory of this source tree.
 
+find_package(prometheus-cpp CONFIG REQUIRED)
+set(PROMETHEUS_LIBRARIES
+    prometheus-cpp::core
+    prometheus-cpp::pull
+)
+
 auto_sources(hfiles "*.h" RECURSE "${LOGDEVICE_COMMON_DIR}")
 auto_sources(files "*.cpp" RECURSE "${LOGDEVICE_COMMON_DIR}")
 
@@ -28,6 +34,7 @@ add_dependencies(common AllReadStreamsDebugConfig-cpp2-target)
 
 set_target_properties(common PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+target_include_directories(common PUBLIC ${PROMETHEUS_INCLUDE_DIR})
 target_link_libraries(
   common
   common-cpp2
@@ -38,7 +45,9 @@ target_link_libraries(
   ConfigurationCodec-cpp2
   KeyValueStore-cpp2
   AllReadStreamsDebugConfig-cpp2
-  ${LOGDEVICE_EXTERNAL_DEPS})
+  ${LOGDEVICE_EXTERNAL_DEPS}
+  ${PROMETHEUS_LIBRARIES}
+)
 
 if(${BUILD_TESTS})
   # Tests
