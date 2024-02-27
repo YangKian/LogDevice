@@ -1,40 +1,143 @@
 name: docker
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to build"
+        required: true
+        default: "main"
+        type: choice
+        options:
+          - main
+          - stable
 
 env:
-  BUILDER_IMAGE: hstreamdb/logdevice-builder
   CLIENT_IMAGE: hstreamdb/logdevice-client
   SERVER_IMAGE: hstreamdb/logdevice
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest # amd64
+          # TODO: arm64
+          # - macos-14 # arm64
+
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
+          ref: ${{ inputs.branch }}
 
-      - name: Build logdevice-builder
+      - name: Docker meta
+        id: meta_server
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.SERVER_IMAGE }}
+
+      - name: Docker meta (client)
+        id: meta_client
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.CLIENT_IMAGE }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push by digest
+        id: build_server
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile
+          # platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.SERVER_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+
+      - name: Build and push by digest (client)
+        id: build_client
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: client
+          # platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.CLIENT_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digest
         run: |
-          docker pull --tag $BUILDER_IMAGE || true
-          docker build . -f docker/Dockerfile.builder --tag $BUILDER_IMAGE
+          mkdir -p /tmp/digests/server
+          digest="${{ steps.build_server.outputs.digest }}"
+          touch "/tmp/digests/server/${digest#sha256:}"
 
-      - name: Build logdevice
+      - name: Export digest (client)
         run: |
-          docker build . -f docker/Dockerfile --tag $SERVER_IMAGE
-          docker build . -f docker/Dockerfile --tag $CLIENT_IMAGE --target client
+          mkdir -p /tmp/digests/client
+          digest="${{ steps.build_client.outputs.digest }}"
+          touch "/tmp/digests/client/${digest#sha256:}"
 
-      # TODO: Push images
-      #
-      # if [ "${{ github.event_name }}" == 'push' ]; then
-      #   if [ "${{ secrets.DOCKERHUB_USERNAME }}" ]; then
-      #     echo "Docker login..."
-      #     echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login --username "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-      #     docker push $BUILDER_IMAGE
-      #   else
-      #     echo "No such secrets, ignored."
-      #   fi
-      # fi
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.os }}
+          path: /tmp/digests/
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests/server
+        run: |
+          if [ "${{ inputs.branch }}" == "main" ]; then
+            docker buildx imagetools create -t ${{ env.SERVER_IMAGE }}:rqlite \
+              $(printf '${{ env.SERVER_IMAGE }}@sha256:%s ' *)
+            docker buildx imagetools inspect ${{ env.SERVER_IMAGE }}:rqlite
+          elif [ "${{ inputs.branch }}" == "stable" ]; then
+            docker buildx imagetools create -t ${{ env.SERVER_IMAGE }}:latest \
+              $(printf '${{ env.SERVER_IMAGE }}@sha256:%s ' *)
+            docker buildx imagetools inspect ${{ env.SERVER_IMAGE }}:latest
+          fi
+
+      - name: Create manifest list and push (client)
+        working-directory: /tmp/digests/client
+        run: |
+          if [ "${{ inputs.branch }}" == "main" ]; then
+            docker buildx imagetools create -t ${{ env.CLIENT_IMAGE }}:rqlite \
+              $(printf '${{ env.CLIENT_IMAGE }}@sha256:%s ' *)
+            docker buildx imagetools inspect ${{ env.CLIENT_IMAGE }}:rqlite
+          elif [ "${{ inputs.branch }}" == "stable" ]; then
+            docker buildx imagetools create -t ${{ env.CLIENT_IMAGE }}:latest \
+              $(printf '${{ env.CLIENT_IMAGE }}@sha256:%s ' *)
+            docker buildx imagetools inspect ${{ env.CLIENT_IMAGE }}:latest
+          fi
