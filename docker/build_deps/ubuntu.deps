@@ -46,3 +46,4 @@ libtool
 bison
 flex
 libkrb5-dev
+gdb

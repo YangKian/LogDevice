@@ -25,6 +25,8 @@ add_dependencies(common ApiService-cpp2-target)
 add_dependencies(common NodesConfiguration-cpp2-target)
 add_dependencies(common ConfigurationCodec-cpp2-target)
 add_dependencies(common AllReadStreamsDebugConfig-cpp2-target)
+# Plugin
+add_dependencies(common prometheus-cpp)
 
 set_target_properties(common PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
@@ -38,7 +40,8 @@ target_link_libraries(
   ConfigurationCodec-cpp2
   KeyValueStore-cpp2
   AllReadStreamsDebugConfig-cpp2
-  ${LOGDEVICE_EXTERNAL_DEPS})
+  ${LOGDEVICE_EXTERNAL_DEPS}
+  ${PROMETHEUS_LIBRARIES})
 
 if(${BUILD_TESTS})
   # Tests

@@ -26,3 +26,6 @@
 [submodule "logdevice/external/fmt"]
 	path = logdevice/external/fmt
 	url = https://github.com/fmtlib/fmt.git
+[submodule "logdevice/external/prometheus-cpp"]
+	path = logdevice/external/prometheus-cpp
+	url = https://github.com/jupp0r/prometheus-cpp.git

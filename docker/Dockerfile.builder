@@ -92,6 +92,18 @@ RUN export CC=gcc-11 && \
     make -j ${PARALLEL:-$(nproc)} && make install && \
     rm -rf /deps/fbthrift
 
+# prometheus-cpp
+COPY logdevice/external/prometheus-cpp /deps/prometheus-cpp
+RUN cd /deps/prometheus-cpp && \
+    cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+          -DBUILD_SHARED_LIBS=ON \
+          -DENABLE_PUSH=OFF \
+          -DENABLE_TESTING=OFF \
+          -DCMAKE_BUILD_TYPE=Release \
+          . && \
+    make -j ${PARALLEL:-$(nproc)} && make install && \
+    rm -rf /deps/prometheus-cpp
+
 ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 WORKDIR /build
 CMD /bin/bash

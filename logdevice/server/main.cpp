@@ -36,6 +36,7 @@
 #include "logdevice/common/plugin/HotTextOptimizerPlugin.h"
 #include "logdevice/common/plugin/Logger.h"
 #include "logdevice/common/plugin/PluginRegistry.h"
+#include "logdevice/common/plugin/PrometheusPublisherFactory.h"
 #include "logdevice/common/plugin/StaticPluginLoader.h"
 #include "logdevice/common/settings/GossipSettings.h"
 #include "logdevice/common/settings/RebuildingSettings.h"
@@ -292,6 +293,7 @@ int main(int argc, const char** argv) {
       std::make_shared<PluginRegistry>(
           createPluginVector<DynamicPluginLoader,
                              StaticPluginLoader,
+                             PrometheusStatsPublisherFactory,
                              BuiltinPluginProvider>());
 
   auto ht_plugin = plugin_registry->getSinglePlugin<HotTextOptimizerPlugin>(

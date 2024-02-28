@@ -4,7 +4,7 @@
 # This source code is licensed under the BSD-style license found in the LICENSE
 # file in the root directory of this source tree.
 
-cmake_minimum_required(VERSION 3.4.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.20.0 FATAL_ERROR)
 
 # Set directory of the Find$x.cmake files to properly include dependencies
 set(CMAKE_MODULE_PATH
@@ -50,7 +50,7 @@ include(build-config)
 
 option(BUILD_TESTS "If enabled, compile the tests." ON)
 # NOTE: ldshell is broken
-option(BUILD_LDSHELL "If enabled, compile the tests." OFF)
+option(BUILD_LDSHELL "If enabled, compile the ldshell." OFF)
 
 option(BUILD_SUBMODULES "Build using Git submodules, to fulfill dependencies"
        ON)
@@ -63,6 +63,7 @@ if(${BUILD_SUBMODULES})
   include(build-wangle)
   include(build-fbthrift)
   include(${LOGDEVICE_DIR}/external/fbthrift/ThriftLibrary.cmake)
+  include(build-prometheus-cpp)
 else()
   message("Building without submodules")
   include(build-rocksdb)
@@ -79,6 +80,11 @@ else()
   set(FOLLY_TEST_UTIL_LIBRARIES Folly::folly_test_util)
   find_package(fizz CONFIG REQUIRED)
   find_package(wangle CONFIG REQUIRED)
+  find_package(prometheus-cpp CONFIG REQUIRED)
+  set(PROMETHEUS_LIBRARIES
+      prometheus-cpp::core
+      prometheus-cpp::pull
+  )
   find_package(FBThrift CONFIG REQUIRED)
   find_program(THRIFT1 thrift1)
   find_path(THRIFT_COMPILER_INCLUDE thrift/lib/cpp2/Thrift.h)
@@ -104,6 +110,7 @@ else()
   add_custom_target(wangle)
   add_custom_target(fbthrift)
   add_custom_target(fmt)
+  add_custom_target(prometheus-cpp)
 endif()
 
 include(build-docs)
