@@ -24,3 +24,11 @@ GRTAGS
 GTAGS
 .ccls-cache
 compile_commands.json
+
+logdevice/build_/
+logdevice/_build/
+
+logdevice/.idea/
+logdevice/build/
+logdevice/cmake-build-debug/
+logdevice/local/

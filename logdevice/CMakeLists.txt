@@ -4,7 +4,7 @@
 # This source code is licensed under the BSD-style license found in the LICENSE
 # file in the root directory of this source tree.
 
-cmake_minimum_required(VERSION 3.4.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.20.0 FATAL_ERROR)
 
 # Set directory of the Find$x.cmake files to properly include dependencies
 set(CMAKE_MODULE_PATH
@@ -200,7 +200,7 @@ target_link_libraries(logdevice_server logdevice_server_core logdevice_admin
 
 set_target_properties(logdevice_server PROPERTIES POSITION_INDEPENDENT_CODE
                                                   True)
-
+add_subdirectory(plugins/prometheus-plugin)
 add_executable(logdeviced ${LOGDEVICE_SERVER_DIR}/main.cpp)
 target_link_libraries(logdeviced logdevice_server ${LOGDEVICE_EXTERNAL_DEPS})
 
