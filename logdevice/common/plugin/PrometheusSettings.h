@@ -14,7 +14,7 @@ class PrometheusSettings : public SettingsBundle {
     // TODO add support for push model for clients
     init("prometheus-listen-addr",
          &prometheus_listen_addr,
-         "6300",
+         "0.0.0.0:6300",
          nullptr,
          "The address that the prometheus exposer will listen on",
          SERVER | CLIENT | REQUIRES_RESTART,

@@ -1,7 +1,6 @@
 #include "PrometheusStatsPublisher.h"
 
 #include <folly/Format.h>
-#include <folly/Random.h>
 #include <logdevice/common/PriorityMap.h>
 #include <logdevice/common/configuration/NodeLocation.h>
 #include <logdevice/common/configuration/TrafficClass.h>
