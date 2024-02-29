@@ -19,11 +19,11 @@ class PrometheusSettings : public SettingsBundle {
          "The address that the prometheus exposer will listen on",
          SERVER | CLIENT | REQUIRES_RESTART,
          SettingsCategory::Monitoring);
-    init("disable-prometheus-publisher",
-         &disable_prometheus,
+    init("enable-prometheus",
+         &enable_prometheus,
          "false",
          nullptr,
-         "Disable the prometheus exposer",
+         "Enable the prometheus exposer",
          SERVER | CLIENT | REQUIRES_RESTART,
          SettingsCategory::Monitoring);
   }
@@ -31,7 +31,7 @@ class PrometheusSettings : public SettingsBundle {
   virtual ~PrometheusSettings() override {}
 
   std::string prometheus_listen_addr;
-  bool disable_prometheus;
+  bool enable_prometheus;
 };
 
 }} // namespace facebook::logdevice

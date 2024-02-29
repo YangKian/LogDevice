@@ -650,7 +650,6 @@ int main(int argc, const char* argv[]) {
   factory.setParam("--enable-self-initiated-rebuilding", "true");
   factory.setParam("--event-log-snapshotting", "true");
   factory.setParam("--enable-config-synchronization", "false");
-  factory.setParam("--disable-prometheus-publisher", "true");
   factory.eventLogMode(
       IntegrationTestUtils::ClusterFactory::EventLogMode::SNAPSHOTTED);
   factory.setNumDBShards(options::nshards);

@@ -18,7 +18,7 @@ class PrometheusStatsPublisherFactory : public StatsPublisherFactory {
 
   std::unique_ptr<StatsPublisher> operator()(UpdateableSettings<Settings>,
                                              int num_db_shards) override {
-    if (prometheus_settings_->disable_prometheus) {
+    if (!prometheus_settings_->enable_prometheus) {
       return nullptr;
     }
     
