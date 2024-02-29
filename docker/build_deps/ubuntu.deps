@@ -4,8 +4,6 @@ git
 g++-11
 clang-11
 make
-ninja-build
-lld
 libboost-dev
 libboost-python-dev
 libboost-thread-dev
@@ -48,6 +46,4 @@ libtool
 bison
 flex
 libkrb5-dev
-libcurl4-openssl-dev
-libjemalloc-dev
 gdb
