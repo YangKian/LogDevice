@@ -4,12 +4,6 @@
 # This source code is licensed under the BSD-style license found in the LICENSE
 # file in the root directory of this source tree.
 
-find_package(prometheus-cpp CONFIG REQUIRED)
-set(PROMETHEUS_LIBRARIES
-    prometheus-cpp::core
-    prometheus-cpp::pull
-)
-
 auto_sources(hfiles "*.h" RECURSE "${LOGDEVICE_COMMON_DIR}")
 auto_sources(files "*.cpp" RECURSE "${LOGDEVICE_COMMON_DIR}")
 
