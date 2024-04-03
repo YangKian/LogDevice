@@ -6,6 +6,7 @@
 
 auto_sources(hfiles "*.h" RECURSE "${LOGDEVICE_COMMON_DIR}")
 auto_sources(files "*.cpp" RECURSE "${LOGDEVICE_COMMON_DIR}")
+auto_sources(statsFiles "*.inc" RECURSE "${LOGDEVICE_COMMON_DIR}/plugin/prometheus_stats_type_convert")
 
 include_directories(${CMAKE_BINARY_DIR})
 
@@ -19,7 +20,7 @@ add_subdirectory(configuration/logs/if)
 add_subdirectory(membership)
 add_subdirectory(replicated_state_machine/if)
 
-add_library(common STATIC ${hfiles} ${files})
+add_library(common STATIC ${hfiles} ${files} ${statsFiles})
 add_dependencies(common folly flatbuffers)
 add_dependencies(common ApiService-cpp2-target)
 add_dependencies(common NodesConfiguration-cpp2-target)

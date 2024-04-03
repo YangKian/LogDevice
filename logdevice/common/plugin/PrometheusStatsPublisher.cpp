@@ -34,9 +34,26 @@ class PrometheusEnumerationCallback : public Stats::EnumerationCallbacks {
       // TODO figure out what's wrong with the failing stats.
       return;
     }
-    auto& family = publisher_->getFamily(name, stats_set_name_);
-    auto& counter = family.Add(std::move(labels));
-    counter.Set(val);
+
+    auto it = publisher_->stats_info_.find(name);
+    if(it == publisher_->stats_info_.end()) {
+      auto& family = publisher_->getGaugeFamily(name, stats_set_name_, "");
+      auto& counter = family.Add(std::move(labels));
+      counter.Set(val);
+      return;
+    }
+
+    if (it->second.is_counter) {
+      auto& family = publisher_->getCounterFamily(name, stats_set_name_, it->second.help);
+      auto& counter = family.Add(std::move(labels));
+      counter.Increment(val);
+      return;
+    } else {
+      auto& family = publisher_->getGaugeFamily(name, stats_set_name_, it->second.help);
+      auto& counter = family.Add(std::move(labels));
+      counter.Set(val);
+      return;
+    }
   }
 
   // Simple stats.
@@ -184,6 +201,28 @@ PrometheusStatsPublisher::PrometheusStatsPublisher(
   exposer_ = std::make_unique<prometheus::Exposer>(listen_addr);
   exposer_->RegisterCollectable(registry_);
   ld_info("Listening on addr %s", listen_addr.c_str());
+
+  stats_info_ = std::unordered_map<std::string, StatsInfo>();
+#define EXPORT_COUNTER_TYPE(name, is_enable, help) \
+  stats_info_.emplace(#name, StatsInfo{is_enable, help});
+#include "logdevice/common/plugin/prometheus_stats_type_convert/admin_stats.inc"
+#include "logdevice/common/plugin/prometheus_stats_type_convert/characterize_load_stats.inc"
+#include "logdevice/common/plugin/prometheus_stats_type_convert/client_stats.inc"
+#include "logdevice/common/plugin/prometheus_stats_type_convert/common_stats.inc"
+#include "logdevice/common/plugin/prometheus_stats_type_convert/ldbench_worker_stats.inc"
+#include "logdevice/common/plugin/prometheus_stats_type_convert/per_flow_group_stats.inc"
+#include "logdevice/common/plugin/prometheus_stats_type_convert/per_log_stats.inc"
+//#include "logdevice/common/plugin/prometheus_stats_type_convert/per_log_time_series.inc"
+#include "logdevice/common/plugin/prometheus_stats_type_convert/per_message_type_stats.inc"
+#include "logdevice/common/plugin/prometheus_stats_type_convert/per_monitoring_tag_stats.inc"
+#include "logdevice/common/plugin/prometheus_stats_type_convert/per_msg_priority_stats.inc"
+#include "logdevice/common/plugin/prometheus_stats_type_convert/per_priority_stats_common.inc"
+#include "logdevice/common/plugin/prometheus_stats_type_convert/per_request_type_stats.inc"
+#include "logdevice/common/plugin/prometheus_stats_type_convert/per_shard_stats.inc"
+#include "logdevice/common/plugin/prometheus_stats_type_convert/per_storage_task_type_stats.inc"
+#include "logdevice/common/plugin/prometheus_stats_type_convert/per_traffic_class_stats.inc"
+#include "logdevice/common/plugin/prometheus_stats_type_convert/server_stats.inc"
+#undef EXPORT_COUNTER_TYPE
 }
 
 PrometheusStatsPublisher::PrometheusStatsPublisher(
@@ -204,17 +243,36 @@ void PrometheusStatsPublisher::publish(
 void PrometheusStatsPublisher::addRollupEntity(std::string entity) {}
 
 Family<Gauge>&
-PrometheusStatsPublisher::getFamily(const std::string& name,
-                                    const std::string& stats_set_name) {
-  auto it = famililes_.find(name);
-  if (it == famililes_.end()) {
+PrometheusStatsPublisher::getGaugeFamily(const std::string& name,
+                                    const std::string& stats_name,
+                                         const std::string& help) {
+  auto it = gauge_famililes_.find(name);
+  if (it == gauge_famililes_.end()) {
     std::string prefixed_name = "ld_" + name;
     auto& fam = prometheus::BuildGauge()
                     .Name(prefixed_name)
-                    .Help("")
-                    .Labels({{"stats_set", stats_set_name}})
+                    .Help(help)
+                    .Labels({{"stats_set", stats_name}})
                     .Register(*registry_);
-    auto new_f = famililes_.emplace(name, fam);
+    auto new_f = gauge_famililes_.emplace(name, fam);
+    it = new_f.first;
+  }
+  return it->second;
+}
+
+Family<prometheus::Counter>&
+PrometheusStatsPublisher::getCounterFamily(const std::string& name,
+                                         const std::string& stats_name,
+                                           const std::string& help) {
+  auto it = counter_famililes_.find(name);
+  if (it == counter_famililes_.end()) {
+    std::string prefixed_name = "ld_" + name;
+    auto& fam = prometheus::BuildCounter()
+                    .Name(prefixed_name)
+                    .Help(help)
+                    .Labels({{"stats_set", stats_name}})
+                    .Register(*registry_);
+    auto new_f = counter_famililes_.emplace(name, fam);
     it = new_f.first;
   }
   return it->second;

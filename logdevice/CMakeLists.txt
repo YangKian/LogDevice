@@ -15,6 +15,8 @@ set(CMAKE_MODULE_PATH
     "${CMAKE_CURRENT_SOURCE_DIR}/../build/fbcode_builder/CMake"
     ${CMAKE_MODULE_PATH})
 
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories("${LOGDEVICE_STAGING_DIR}/usr/local/include/")
 
